@@ -1,0 +1,2 @@
+Valutato llm con principali tecniche di retrieve (lower bound)
+Nota che se a contesto non avevo le informazioni necessarie e il llm rispondeva che non aveva le informazioni necessarie veniva considerato come corretto

@@ -1,0 +1,2 @@
+A sinistra senza reranking, a destra con. (Lower bound)
+Tuttavia a destra il reranker è stato fatto con il massimo numero di topk presente a sinistra, e se ad esempio sto controllando rerank@1 non ho considerato né giuste né sbagliate le risposte contenenti >= 2 chunk
