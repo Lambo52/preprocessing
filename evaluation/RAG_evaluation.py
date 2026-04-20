@@ -1,3 +1,7 @@
+
+
+# QUA INVECE VIENE FATTA ANDARE PIPELINE DI RAG NORMALE, POI PRENDENDO DA EVALUATION_TABLE LE DOMANDE, MI CALCOLO IL GROUND TRUTH A PARTIRE DAI CHUNK_INDEX, POI PASSO A GEMINI DOMANDA, RISPOSTA E GROUND TRUTH PER AVERNE LA VALUTAZIONE, PER I METODI IN CUI C'è AUGMENTATION LA PRENDO DALLA TABELLA EVALUATION_TABLE
+
 import os
 import qdrant_client
 from dotenv import load_dotenv
@@ -26,7 +30,6 @@ except Exception:
     ServiceUnavailable = ResourceExhausted = DeadlineExceeded = InternalServerError = Exception
 import time, random, sys, gc
 from transformers import AutoTokenizer
-from HYDE_V2 import generate_hypothetical_doc
 
 
 load_dotenv()
@@ -151,7 +154,7 @@ def count_tokens(text: str) -> int:
     """Conta i token nel testo usando il tokenizer del modello."""
     return len(tokenizer.encode(text))
 
-def get_context_from_knowledge_base(query, topk, target_tokens):
+def get_context_from_knowledge_base(query, topk, target_tokens, hyde_doc=None):
     print(f"  [RETRIEVE] Query: {query[:80]}... | topk={topk} | target_tokens={target_tokens}")
     
     vector_store = QdrantVectorStore(
@@ -202,7 +205,7 @@ def get_context_from_knowledge_base(query, topk, target_tokens):
         )
 
     # Configura augmentation in base alla tecnica
-    custom_embeddings = [generate_hypothetical_doc(query)] if "HyDE" in TECNICA_RETRIEVE else None
+    custom_embeddings = [hyde_doc] if "HyDE" in TECNICA_RETRIEVE and hyde_doc else None
     if custom_embeddings:
         print(f"  [RETRIEVE] Custom embedding generato per query: {custom_embeddings[0][:80]}...")
 
@@ -283,10 +286,10 @@ def get_context_from_knowledge_base(query, topk, target_tokens):
     return context_str, retrieved_chunks_info        
 
 
-def answer_question(query, topk, target_tokens):
+def answer_question(query, topk, target_tokens, hyde_doc=None):
     print(f"  [ANSWER] Inizio risposta per: {query[:80]}...")
 
-    context_str, retrieved_chunks_info = get_context_from_knowledge_base(query, topk, target_tokens)
+    context_str, retrieved_chunks_info = get_context_from_knowledge_base(query, topk, target_tokens, hyde_doc)
 
     system_prompt_content = (
         "Sei un assistente tecnico esperto del sistema WMS WAMAS. "
@@ -440,14 +443,14 @@ def fetch_gt_context(conn_history, gt_filename, gt_chunks):
     return "\n\n".join(row[1] for row in rows if row[1])
 
 
-def process_single_question(domanda, topk, target_tokens, gt_contesto, gt_filename, gt_chunks):
+def process_single_question(domanda, topk, target_tokens, gt_contesto, gt_filename, gt_chunks, hyde_doc=None):
     """
     Processa una singola domanda e restituisce il risultato della valutazione.
     Questa funzione è pensata per essere eseguita in parallelo.
     """
     try:
         print(f"  [PROCESS] Inizio processing domanda: {domanda[:80]}...")
-        risposta, context_str, retrieved_chunks_info = answer_question(domanda, topk, target_tokens)
+        risposta, context_str, retrieved_chunks_info = answer_question(domanda, topk, target_tokens, hyde_doc)
 
         valutazione = evaluate_answer(domanda, risposta, gt_contesto)
         print(f"  [PROCESS] Domanda completata. Valutazione: {valutazione}")
@@ -490,7 +493,7 @@ if __name__ == "__main__":
     print(f"[DB] Connessione a eval DB: {eval_db_path}")
     conn_eval = sqlite3.connect(eval_db_path)
     # Estrai le domande come DataFrame
-    df_eval = pd.read_sql_query("SELECT * FROM question_table", conn_eval)
+    df_eval = pd.read_sql_query("SELECT * FROM evaluation_table", conn_eval)
     # Chiudi la connessione
     conn_eval.close()
     print(f"[DB] Caricate {len(df_eval)} domande dal DB eval. Connessione chiusa.")
@@ -499,8 +502,7 @@ if __name__ == "__main__":
     print(f"[DB] Connessione a history DB: {history_db_path}")
     conn_history = sqlite3.connect(history_db_path)
 
-    if TECNICA_CHUNKING == "hierarchical":
-        df_eval = df_eval.sample(124)
+
     tempo_inizio = time.time()
 
     for t in TOP_K_CONFIG:
@@ -529,7 +531,8 @@ if __name__ == "__main__":
             gt_filename = row["filename"]
             gt_chunks = parse_chunk_index(row["chunk_index"])
             gt_contesto = fetch_gt_context(conn_history, gt_filename, gt_chunks)
-            tasks.append((domanda, gt_contesto, gt_filename, gt_chunks))
+            hyde_doc = row.get("hypothetical_doc") if "hypothetical_doc" in row.index else None
+            tasks.append((domanda, gt_contesto, gt_filename, gt_chunks, hyde_doc))
 
 
         print(f"[RUN] {len(tasks)} task preparati. Avvio processing parallelo con {MAX_WORKERS} worker...")
@@ -545,8 +548,9 @@ if __name__ == "__main__":
                     gt_contesto,
                     gt_filename,
                     gt_chunks,
+                    hyde_doc,
                 ): (domanda, gt_filename, gt_chunks)
-                for (domanda, gt_contesto, gt_filename, gt_chunks) in tasks
+                for (domanda, gt_contesto, gt_filename, gt_chunks, hyde_doc) in tasks
             }
                 
             # Processa i risultati man mano che completano

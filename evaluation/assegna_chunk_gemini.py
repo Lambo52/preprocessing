@@ -1,3 +1,6 @@
+
+#PRENDE LA QUESTION_TABLE E CI ASSEGNA IL CHUNK_INDEX GRAZIE A GEMINI
+
 import sqlite3
 import os
 import json

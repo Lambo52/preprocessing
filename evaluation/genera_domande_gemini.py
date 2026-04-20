@@ -1,3 +1,6 @@
+
+# GENERA LA TABELLA QUESTION_TABLE, CON DOMANDE, FILENAME E CHUNK_INDEX NULLO
+
 import sqlite3
 import os
 import json

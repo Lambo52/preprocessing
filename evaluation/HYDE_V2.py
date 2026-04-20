@@ -1,5 +1,8 @@
-import os
 
+# PRENDE TABELLA QUESTION_TABLE E NE CREA UN'ALTRA UGUALE MA CON IL DOCUMENTO IPOTETICO GENERATO DALLA QUERY, CHE VERRA' USATO PER L'EVALUATION 
+
+
+import os
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.core import PromptTemplate
 from pydantic import BaseModel, Field
@@ -17,7 +20,7 @@ load_dotenv()
 
 
 #MODIFICARE
-nome_db = "DUMMY"
+nome_db = "docling_eval"
 
 
 url_llm = os.getenv("VLLM_API_BASE_URL")

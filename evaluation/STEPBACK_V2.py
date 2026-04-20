@@ -16,7 +16,7 @@ load_dotenv()
 
 
 #MODIFICARE
-nome_db = "DUMMY"
+nome_db = "overlap_eval"
 
 
 url_llm = os.getenv("VLLM_API_BASE_URL")
