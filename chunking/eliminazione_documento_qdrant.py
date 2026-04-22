@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 collectionname = "WAMASRAGOVERLAP"
-nome_documento = "Creazione_nuove_udc.pdf"   # <-- il valore di origin_filename
+nome_documento = "PUB_Creazione_nuove_udc.pdf"   # <-- il valore di origin_filename
 
 client = QdrantClient(url=os.getenv("QDRANT_URL"))
 
