@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 
 methods = ['Docling', 'Hierarchical', 'Overlap']
-values  = [0.744, 0.758, 0.882]
+values  = [0.745, 0.759, 0.883]
 
 plt.figure(figsize=(8, 6))
 bars = plt.bar(methods, values, width=0.5)
