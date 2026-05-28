@@ -1,1 +1,1 @@
-Progetto tirocinio magistrale con tutto il preprocessing, evaluation, ed esperimenti
+Presente tutto il preprocessing, evaluation, ed esperimenti
