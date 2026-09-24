@@ -133,7 +133,7 @@ llm = OpenAILike(
     timeout=60.0,
     streaming=False,
     context_window=8192,
-    temperature=0,
+    temperature=0.2,
     max_tokens=1024
 )
 print("[INIT] LLM (Qwen) caricato.")
