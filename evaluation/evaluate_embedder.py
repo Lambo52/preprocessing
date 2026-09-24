@@ -125,13 +125,26 @@ def evaluate(dense, sparse, hyde): #qua hyde e aug sono booleani
         )
         print(f"  Usando: SOLO Sparse, topk={topk}")
     else:
-        # Hybrid nativo di Qdrant che è meglio di fare mode simple...
-        retriever = index.as_retriever(
-            vector_store_query_mode=VectorStoreQueryMode.HYBRID,
+        # Hybrid
+        retriever_dense = index.as_retriever(
+            vector_store_query_mode=VectorStoreQueryMode.DEFAULT,
             similarity_top_k=topk,
-            sparse_top_k=topk,
-            filters=None
+            filters=None,
         )
+        retriever_sparse = index.as_retriever(
+            vector_store_query_mode=VectorStoreQueryMode.SPARSE,
+            sparse_top_k=topk,
+            filters=None,
+        )
+ 
+        retriever = QueryFusionRetriever(
+            retrievers=[retriever_dense, retriever_sparse],
+            similarity_top_k=topk,      
+            num_queries=1,             
+            mode="reciprocal_rerank",   
+            use_async=False,
+        )
+
         print(f"  Usando: HYBRID, topk={topk}")
 
 

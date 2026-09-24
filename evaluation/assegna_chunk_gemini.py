@@ -93,6 +93,7 @@ class AssignedQuestion(BaseModel):
 
 
 class AssignmentOutput(BaseModel):
+    reasoning: str = Field(..., description="Spiegazione del ragionamento seguito per l'assegnazione dei chunk.")
     items: List[AssignedQuestion] = Field(..., description="Per ciascuna domanda, i chunk_ids corrispondenti.")
 
 

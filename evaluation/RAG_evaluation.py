@@ -12,6 +12,7 @@ from llama_index.llms.openai_like import OpenAILike
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.core.vector_stores.types import MetadataFilters, MetadataFilter, FilterOperator
+from llama_index.core.retrievers import QueryFusionRetriever
 from rerank import reranka
 from pydantic import BaseModel, Field
 from llama_index.core.retrievers import AutoMergingRetriever
@@ -190,11 +191,23 @@ def get_context_from_knowledge_base(query, topk, target_tokens, hyde_doc=None):
     
     if TECNICA_RETRIEVE == "Hybrid + Base":
         # Usa VectorStoreQueryMode.HYBRID nativo di Qdrant
-        retriever = index.as_retriever(
-            vector_store_query_mode=VectorStoreQueryMode.HYBRID,
+        retriever_dense = index.as_retriever(
+            vector_store_query_mode=VectorStoreQueryMode.DEFAULT,
             similarity_top_k=topk,
+            filters=None,
+        )
+        retriever_sparse = index.as_retriever(
+            vector_store_query_mode=VectorStoreQueryMode.SPARSE,
             sparse_top_k=topk,
-            filters=None
+            filters=None,
+        )
+
+        retriever = QueryFusionRetriever(
+            retrievers=[retriever_dense, retriever_sparse],
+            similarity_top_k=topk,
+            num_queries=1,
+            mode="reciprocal_rerank",
+            use_async=False,
         )
     else:
         # Dense search (per Dense + Base e Dense + HyDE)
