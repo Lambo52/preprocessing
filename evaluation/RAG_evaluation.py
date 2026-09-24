@@ -132,7 +132,7 @@ llm = OpenAILike(
     is_function_calling_model=True,    
     timeout=60.0,
     streaming=False,
-    context_window=8192,
+    context_window=12288,
     temperature=0.2,
     max_tokens=1024
 )
